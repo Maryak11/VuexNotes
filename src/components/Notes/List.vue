@@ -1,8 +1,18 @@
 <template>
   <div class="notes-list">
-    <div class="note-item" v-for="(note, index) in getNotes" :key="index">
+    <div class="note-item" v-for="(note, index) in notes" :key="index">
       <div class="note-header">
-        <p>{{ note.title }}</p>
+        <p v-if="note.isActive" @dblclick="onChangeNote(note.id)">
+          {{ note.title }}
+        </p>
+        <input
+          v-else
+          :placeholder="note.value"
+          @blur="onChangeNoteTitle(note.id)"
+          v-model="newValue"
+          class="note__input"
+          type="text"
+        />
         <p style="cursor: pointer" @click="onRemoveNote(index)">Х</p>
       </div>
       <div class="note-footer">
@@ -13,18 +23,46 @@
 </template>
 <script>
 import TagsList from '@/components/UI/TagsList.vue'
+import { mapState } from 'vuex'
 export default {
   components: {
     TagsList
   },
-  computed: {
-    getNotes() {
-      return this.$store.getters.getNotes
+  data() {
+    return {
+      newValue: '',
+      newNotes: []
     }
   },
+  computed: {
+    ...mapState(['notes'])
+  },
+  mounted() {
+    this.$store.dispatch('getNotesFromLS')
+  },
+
   methods: {
     onRemoveNote(index) {
       this.$store.dispatch('removeNote', index)
+    },
+    onChangeNote(noteID) {
+      this.$store.dispatch('changeActiveNote', noteID)
+    },
+    onChangeNoteTitle(noteID) {
+      const payload = {
+        id: noteID,
+        value: this.newValue
+      }
+      this.$store.dispatch('onChangeNoteTitle', payload)
+      this.newValue = ''
+    }
+  },
+  watch: {
+    notes: {
+      handler() {
+        localStorage.setItem('notes1', JSON.stringify(this.notes))
+      },
+      deep: true
     }
   }
 }
@@ -58,5 +96,9 @@ export default {
   flex-direction: column;
   justify-content: start;
   align-items: start;
+}
+.note_input {
+  max-height: 7px;
+  align-items: center;
 }
 </style>
